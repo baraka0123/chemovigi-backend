@@ -8,27 +8,24 @@ const jwt = require("jsonwebtoken");
 router.post("/register", async (req, res) => {
   const { name, email, password, role, licenseNumber, specialty } = req.body;
 
-  if (!name || !email || !password || !role) {
-    return res.status(400).json({ msg: "Please fill all required fields" });
-  }
-
-  if (role === "clinician" && (!licenseNumber || !specialty)) {
-    return res.status(400).json({ msg: "Clinicians must provide licenseNumber and specialty" });
-  }
-
   try {
+    // Check if user exists
     const existingUser = await User.findOne({ email });
-    if (existingUser) return res.status(400).json({ msg: "Email already exists" });
+    if (existingUser)
+      return res.status(400).json({ msg: "Email already exists" });
 
-    const hashedPassword = await bcrypt.hash(password, 10);
+    // Hash password
+    const salt = await bcrypt.genSalt(10);
+    const hashedPassword = await bcrypt.hash(password, salt);
 
+    // Create new user
     const newUser = new User({
       name,
       email,
       password: hashedPassword,
       role,
       licenseNumber: role === "clinician" ? licenseNumber : undefined,
-      specialty: role === "clinician" ? specialty : undefined
+      specialty: role === "clinician" ? specialty : undefined,
     });
 
     await newUser.save();
@@ -43,8 +40,6 @@ router.post("/register", async (req, res) => {
 router.post("/login", async (req, res) => {
   const { email, password } = req.body;
 
-  if (!email || !password) return res.status(400).json({ msg: "Please provide email and password" });
-
   try {
     const user = await User.findOne({ email });
     if (!user) return res.status(400).json({ msg: "Invalid credentials" });
@@ -52,6 +47,7 @@ router.post("/login", async (req, res) => {
     const isMatch = await bcrypt.compare(password, user.password);
     if (!isMatch) return res.status(400).json({ msg: "Invalid credentials" });
 
+    // Create JWT
     const token = jwt.sign(
       { id: user._id, role: user.role, name: user.name },
       process.env.JWT_SECRET,
@@ -65,7 +61,7 @@ router.post("/login", async (req, res) => {
         name: user.name,
         email: user.email,
         role: user.role,
-      }
+      },
     });
   } catch (err) {
     console.error(err);
