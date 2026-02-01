@@ -16,8 +16,12 @@ connectDB();
 app.use("/api/auth", require("./routes/auth"));
 
 // Test route
-app.get("/test", (req, res) => res.send("Backend is running!"));
+app.get("/test", (req, res) => {
+  res.send("Backend is running!");
+});
 
 // Start server
 const PORT = process.env.PORT || 5000;
-app.listen(PORT, () => console.log(`🔥 Server running on port ${PORT}`));
+app.listen(PORT, () => {
+  console.log(`🔥 Server running on port ${PORT}`);
+});
